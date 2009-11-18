@@ -1,6 +1,22 @@
-import random
+import random #used to generate randomness for mutations, etc.
+import copy #deep copy support
 
-def startEvolution():
+"""Model evolutionary tactics in order to evolve a program that can solve a maze relatively efficiently"""
+
+#Constants Section
+#Organism-definition Constants
+MEMORY_SIZE = 20
+NUM_STATES = 20
+NUM_VALUES = 2
+
+#Reproduction Constants
+MIN_CROSSOVER_POINTS = 2
+MAX_CROSSOVER_POINTS = 10
+
+def GOD():
+    universe = Universe()
+    universe.start()
+    
     organism = Organism(20, 20, 2)
     
     displayStatesTable(organism.states)
@@ -12,34 +28,16 @@ def startEvolution():
 
         organism.liveALittle()
 
-class State:
-    newValue = 0
-    newState = 0
-    newLocation = 0
+class Universe:
+    generation = 0
+    def __init__(self):
+        self.adam = Organism(NUM_STATES, MEMORY_SIZE, NUM_VALUES)
+        self.eve = Organism(NUM_STATES, MEMORY_SIZE, NUM_VALUES)
 
-    def __init__(self, nvalue=0, nstate=0, nlocation=0):
-        self.newValue = nvalue
-        self.newState = nstate
-        self.newLocation = nlocation
-    def __str__(self):
-        return unicode(self)
-    def __unicode__(self):
-        return "v="+str(self.newValue)+",s="+str(self.newState)+",l="+str(self.newLocation)
-        
+        self.adam.reproduce(self.eve)
 
-def getRandomState(validValues=(0,100), validStates=(0,100), validLocations=(0,100)):
-    """ Returns a random State object
-    
-        The validValues, validStates, and validLocations are all tuples of length 2 defining the minimum and maximum values 
-    """
-    return State(random.randint(validValues[0], validValues[1]), random.randint(validStates[0], validStates[1]), random.randint(validLocations[0], validLocations[1]))
-
-def displayStatesTable(states):
-    for i in range(len(states)):
-        print "State "+str(i)+": \t\t",
-        for j in range(len(states[i])):
-            print states[i][j].__str__()+"\t\t",
-        print
+    def start(self):
+        pass
 
 class Organism:
     state = 0 #the current state of the organism
@@ -79,6 +77,85 @@ class Organism:
             self.location = currentState.newLocation
             self.state = currentState.newState
 
+    #return numChildren Organisms that are offspring of this organism, and the 'other' organism
+    def reproduce(self, other, numChildren=2, percentMutation=5):
+        children = []
+        for i in range(numChildren):
+            #do "DNA crossover"
+            child = self.meiosis(other)
+            #average values for memory between the two
+            for j in range(child.memorySize):
+                child.memory[j] = (self.memory[j] + other.memory[j]) / 2
+                if random.randint(0,1) is 1: #do this to adjust for always rounding down
+                    child.memory[j] = (child.memory[j] + 1) % child.memorySize
+            #and introduce some random mutation
+            numMutations = random.randint(max(percentMutation-percentMutation/2,0), min(percentMutation+percentMutation/2,100))*(child.numStates*child.numValues + child.memorySize)
+            for j in range(numMutations):
+                mutationLocation = random.randint(0,child.numStates*child.numValues + child.memorySize - 1)
+                if mutationLocation < child.numStates*child.numValues:
+                    child.states[mutationLocation/child.numValues][mutationLocation%child.numValues] = getRandomState((0,child.numValues-1), (0,child.numStates-1), (0,child.memorySize-1))
+                else:
+                    child.memory[mutationLocation-child.numStates*child.numValues] = random.randint(0,child.numValues)
+            children.append(child)
+        return children
 
+
+    #return an Organism that is a combination of this Organism and 'other'
+    def meiosis(self, other):
+        #deep copy the Organisms 
+        org1 = copy.copy(self);
+        org2 = copy.copy(other);
+        #randomize which one gets returned, and which gets to be the "base" for crossing over
+        if random.randint(0,1) is 1:
+            tmp = org1
+            org2 = org1
+            org1 = tmp
+
+        #get the number of crossover points
+        numCrossoverPoints = random.randint(MIN_CROSSOVER_POINTS, MAX_CROSSOVER_POINTS)
+        for i in range(numCrossoverPoints):
+            crossoverState = random.randint(0,self.numStates - 1)
+            crossoverValue = random.randint(0,self.numValues - 1)
+            #if we're not crossing over the last state, move the state lists over after the one we're switching
+            if (crossoverState < org1.numStates - 1):
+                org1.states[crossoverState + 1:] = org2.states[crossoverState + 1:]
+            #now, cross over the values inside the pivotal crossoverState at crossoverValue
+            print crossoverState
+            print crossoverValue
+            org1.states[crossoverState][crossoverValue:] = org2.states[crossoverState][crossoverValue:]
+        return org1
+
+
+class State:
+    newValue = 0
+    newState = 0
+    newLocation = 0
+
+    def __init__(self, nvalue=0, nstate=0, nlocation=0):
+        self.newValue = nvalue
+        self.newState = nstate
+        self.newLocation = nlocation
+    def __str__(self):
+        return unicode(self)
+    def __unicode__(self):
+        return "v="+str(self.newValue)+",s="+str(self.newState)+",l="+str(self.newLocation)
+        
+
+def getRandomState(validValues=(0,100), validStates=(0,100), validLocations=(0,100)):
+    """ Returns a random State object
+    
+        The validValues, validStates, and validLocations are all tuples of length 2 defining the minimum and maximum values 
+    """
+    return State(random.randint(validValues[0], validValues[1]), random.randint(validStates[0], validStates[1]), random.randint(validLocations[0], validLocations[1]))
+
+def displayStatesTable(states):
+    for i in range(len(states)):
+        print "State "+str(i)+": \t\t",
+        for j in range(len(states[i])):
+            print states[i][j].__str__()+"\t\t",
+        print
+
+
+#Function to start the whole process
 if __name__ == "__main__":
-    startEvolution()
+    GOD()
