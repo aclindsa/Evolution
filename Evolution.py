@@ -16,17 +16,6 @@ MAX_CROSSOVER_POINTS = 10
 def GOD():
     universe = Universe()
     universe.start()
-    
-    organism = Organism(20, 20, 2)
-    
-    displayStatesTable(organism.states)
-
-    for i in range(100):
-        print "state: "+str(organism.state)
-        print "location: "+str(organism.location)
-        print "memory :"+str(organism.memory)+"\n"
-
-        organism.liveALittle()
 
 class Universe:
     generation = 0
@@ -34,10 +23,17 @@ class Universe:
         self.adam = Organism(NUM_STATES, MEMORY_SIZE, NUM_VALUES)
         self.eve = Organism(NUM_STATES, MEMORY_SIZE, NUM_VALUES)
 
-        self.adam.reproduce(self.eve)
-
     def start(self):
-        pass
+        print "Adam: \n"
+        displayStatesTable(self.adam.states)
+        print "\nmemory :"+str(self.adam.memory)+"\n\n"
+        print "Eve: \n"
+        displayStatesTable(self.eve.states)
+        print "\nmemory :"+str(self.eve.memory)+"\n\n"
+
+        neworg = self.adam.meiosis(self.eve)
+        displayStatesTable(neworg.states)
+        print "\nmemory :"+str(neworg.memory)+"\n\n"
 
 class Organism:
     state = 0 #the current state of the organism
@@ -87,7 +83,7 @@ class Organism:
             for j in range(child.memorySize):
                 child.memory[j] = (self.memory[j] + other.memory[j]) / 2
                 if random.randint(0,1) is 1: #do this to adjust for always rounding down
-                    child.memory[j] = (child.memory[j] + 1) % child.memorySize
+                    child.memory[j] = (child.memory[j] + 1) % child.numValues
             #and introduce some random mutation
             numMutations = random.randint(max(percentMutation-percentMutation/2,0), min(percentMutation+percentMutation/2,100))*(child.numStates*child.numValues + child.memorySize)
             for j in range(numMutations):
@@ -105,11 +101,6 @@ class Organism:
         #deep copy the Organisms 
         org1 = copy.copy(self);
         org2 = copy.copy(other);
-        #randomize which one gets returned, and which gets to be the "base" for crossing over
-        if random.randint(0,1) is 1:
-            tmp = org1
-            org2 = org1
-            org1 = tmp
 
         #get the number of crossover points
         numCrossoverPoints = random.randint(MIN_CROSSOVER_POINTS, MAX_CROSSOVER_POINTS)
@@ -118,13 +109,19 @@ class Organism:
             crossoverValue = random.randint(0,self.numValues - 1)
             #if we're not crossing over the last state, move the state lists over after the one we're switching
             if (crossoverState < org1.numStates - 1):
+                tmp = org1.states[crossoverState + 1:]
                 org1.states[crossoverState + 1:] = org2.states[crossoverState + 1:]
+                org2.states[crossoverState + 1:] = tmp
             #now, cross over the values inside the pivotal crossoverState at crossoverValue
-            print crossoverState
-            print crossoverValue
+            tmp = org1.states[crossoverState][crossoverValue:]
             org1.states[crossoverState][crossoverValue:] = org2.states[crossoverState][crossoverValue:]
-        return org1
+            org2.states[crossoverState][crossoverValue:] = tmp
 
+        #randomize which one gets returned
+        if random.randint(0,1) is 1:
+            return org1
+        else:
+            return org2
 
 class State:
     newValue = 0
