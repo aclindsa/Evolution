@@ -66,13 +66,18 @@ class Organism:
             numMutations = (child.numStates*child.numValues +
                             child.memorySize)*pMutation/100
             for j in range(numMutations):
-                mutationLocation = random.randint(0,child.numStates*child.numValues + child.memorySize - 1)
+                mutationLocation = random.randint(0,child.numStates*child.numValues + \
+                               child.memorySize - 1)
                 if mutationLocation < child.numStates*child.numValues:
-                    child.states[mutationLocation/child.numValues][mutationLocation%child.numValues] = State.getRandomState((0,child.numValues-1),
-                                           (0,child.numStates-1),
-                                           (0,child.memorySize-1))
+                    state = mutationLocation / child.numValues
+                    value = mutationLocation % child.numValues
+                    child.states[state][value] = \
+                        State.getRandomState((0,child.numValues-1),
+                                             (0,child.numStates-1),
+                                             (0,child.memorySize-1))
                 else:
-                    child.memory[mutationLocation-child.numStates*child.numValues] = random.randint(0,child.numValues)
+                    mem = mutationLocation-child.numStates*child.numValues
+                    child.memory[mem] = random.randint(0,child.numValues)
             children.append(child)
         return children
 
@@ -101,7 +106,8 @@ class Organism:
             #now, cross over the values inside the pivotal crossoverState
             #at crossoverValue
             tmp = org1.states[crossoverState][crossoverValue:]
-            org1.states[crossoverState][crossoverValue:] = org2.states[crossoverState][crossoverValue:]
+            org1.states[crossoverState][crossoverValue:] = \
+                    org2.states[crossoverState][crossoverValue:]
             org2.states[crossoverState][crossoverValue:] = tmp
 
         #randomize which one gets returned
