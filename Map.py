@@ -138,15 +138,22 @@ class Map:
             toReturn += "\n"
         return toReturn
 
-    def __str__(self):
-        return unicode(self)
-    def __unicode__(self):
+    def toString(self, character=None, coord=None):
         toReturn = ""
         for i in range(self.M):
             for j in range(self.N):
-                toReturn += str(self.map[i][j]) + " "
+                if coord is not None and coord.i is i and coord.j is j:
+                    toReturn += character[0] + " "
+                else:
+                    toReturn += str(self.map[i][j]) + " "
             toReturn = toReturn[:-1] + "\n"
         return toReturn
+
+
+    def __str__(self):
+        return self.toString()
+    def __unicode__(self):
+        return self.toString()
 
 class Coordinate:
     i = 0

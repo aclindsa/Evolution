@@ -11,6 +11,7 @@ NUM_VALUES = 2
 
 #Evolutionary Constants
 GENERATION_SIZE = 20
+MAX_TEST_LENGTH = 500
 
 def GOD():
     universe = Universe()
@@ -24,24 +25,16 @@ class Universe:
 
     def start(self):
         m = Map("simple.map")
+
         print str(m)
         print m.printShortestPaths()
         m.findShortestPath(m.start)
         print m.printShortestPaths()
 
-#        print "Adam: \n"
-#        self.adam.displayStatesTable()
-#        print "\nmemory :"+str(self.adam.memory)+"\n\n"
-#        print "Eve: \n"
-#        self.eve.displayStatesTable()
-#        print "\nmemory :"+str(self.eve.memory)+"\n\n"
-#
-#        #neworg = self.adam.meiosis(self.eve)
-#        neworgs = self.adam.reproduce(self.eve, 1, 10)
-#        neworg = neworgs[0]
-#        
-#        neworg.displayStatesTable()
-#        print "\nmemory :"+str(neworg.memory)+"\n\n"
+def testOrganism(map, organism):
+    """Function to test an organism and return a numeric value representing how
+    it fared in attempting to solve the supplied maze"""
+    pass
 
 #Function to start the whole process
 if __name__ == "__main__":
