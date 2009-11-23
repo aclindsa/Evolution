@@ -1,5 +1,5 @@
 import random #used to generate randomness for mutations, etc.
-import copy #deep copy support
+from copy import copy #deep copy support
 
 from State import State
 
@@ -43,9 +43,9 @@ class Organism:
         for i in range(numStates):
             #find the info about the next state, and execute it
             currentState = self.states[self.state][self.memory[self.location]]
-            self.memory[self.location] = currentState.newValue
             self.location = currentState.newLocation
             self.state = currentState.newState
+            self.memory[self.location] = currentState.newValue
 
     def reproduce(self, other, numChildren=2, percentMutation=5):
         """return numChildren Organisms that are offspring of this organism, and the
@@ -77,7 +77,7 @@ class Organism:
                                              (0,child.memorySize-1))
                 else:
                     mem = mutationLocation-child.numStates*child.numValues
-                    child.memory[mem] = random.randint(0,child.numValues)
+                    child.memory[mem] = random.randint(0,child.numValues-1)
             children.append(child)
         return children
 
@@ -86,8 +86,8 @@ class Organism:
         """return an Organism that is a combination of the calling Organism and
         'other'"""
         #deep copy the Organisms 
-        org1 = copy.copy(self);
-        org2 = copy.copy(other);
+        org1 = copy(self);
+        org2 = copy(other);
 
         #get the number of crossover points (and make the actual percentage
         #wobble a little

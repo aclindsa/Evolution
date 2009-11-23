@@ -169,3 +169,5 @@ class Coordinate:
         return Coordinate(self.i, self.j-1)
     def right(self):
         return Coordinate(self.i, self.j+1)
+    def equals(self, other):
+        return self.i is other.i and self.j is other.j
