@@ -12,13 +12,13 @@ NUM_STATES = 8
 NUM_VALUES = 2
 
 #Evolutionary Constants
-ORIGINAL_POOL_SIZE = 1000 #size of the original random generation of organisms
+ORIGINAL_POOL_SIZE = 10000 #size of the original random generation of organisms
 GENERATION_SIZE = 50 #size of each generation thereafter
 CARRY_OVER = 10  #number of top organisms to 'select' to procreate to make the
                  #next generation
 LIFETIME = 100 #number of 'ticks' the organism has to prove itself
 PERCENT_MUTATION = 20 #percent of mutation to apply to each reproduction
-NUM_GENERATIONS = 100000 #number of generations
+NUM_GENERATIONS = 10000 #number of generations
 
 def GOD():
     universe = Universe()
@@ -82,7 +82,8 @@ class Universe:
             for i in range(len(self.parents)):
                 for j in range(i+1,len(self.parents)):
                     if len(self.children) < GENERATION_SIZE:
-                        c = self.parents[i].reproduce(self.parents[j], 1, PERCENT_MUTATION)
+                        #Note: this makes the percent mutation go down as we get up in the generations
+                        c = self.parents[i].reproduce(self.parents[j], 1, PERCENT_MUTATION * (NUM_GENERATIONS-self.generation) / NUM_GENERATIONS)
                         self.children.append(c[0])
                     else:
                         return

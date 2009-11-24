@@ -58,7 +58,7 @@ class Organism:
             for j in range(child.memorySize):
                 child.memory[j] = (self.memory[j] + other.memory[j]) / 2
                 #do this to adjust for always rounding down
-                if random.randint(0,1) is 1: 
+                if (self.memory[j] + other.memory[j]) % 2 is not 0 and random.randint(0,1) is 1: 
                     child.memory[j] = (child.memory[j] + 1) % child.numValues
             #and introduce some random mutation
             pMutation = random.randint(max(percentMutation/2,0),
