@@ -171,3 +171,7 @@ class Coordinate:
         return Coordinate(self.i, self.j+1)
     def equals(self, other):
         return self.i is other.i and self.j is other.j
+    def __unicode__(self):
+        return str(self)
+    def __str__(self):
+        return "("+str(self.i)+","+str(self.j)+")"
