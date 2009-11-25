@@ -14,8 +14,8 @@ NUM_VALUES = 2
 #Evolutionary Constants
 ORIGINAL_POOL_SIZE = 10000 #size of the original random generation of organisms
 GENERATION_SIZE = 100 #size of each generation thereafter
-CARRY_OVER = 5  #number of top organisms to 'select' to procreate to make the
-                 #next generation
+CARRY_OVER = 10 #number of top organisms to 'select' to procreate to make the
+                #next generation
 MAX_LIFETIME = 5 #the maximum number of generations an organism can survive for
 TEST_LENGTH = 100 #number of 'ticks' the organism has to prove itself
 PERCENT_MUTATION = 5 #percent of mutation to apply to each reproduction
@@ -31,6 +31,7 @@ class Universe:
         #create the map that defines this Universe
         self.map = Map("simple.map")
         print "Initializing map and first generation...\n"
+        print str(self.map)
 
         #generate first set of parents
         self.parents = [Organism(NUM_STATES, MEMORY_SIZE, NUM_VALUES) for i in range(ORIGINAL_POOL_SIZE)]
@@ -121,8 +122,6 @@ class Universe:
         coord = deepcopy(self.map.start)
         i = 0
         distanceSum = 0
-        #reset the organism to its state as if it were being "born"
-        organism.reset()
         while i < TEST_LENGTH:
             i = i + 1
             #figure out which ways the organism can move
