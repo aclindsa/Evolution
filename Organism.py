@@ -1,5 +1,5 @@
 import random #used to generate randomness for mutations, etc.
-from copy import copy #deep copy support
+from copy import deepcopy #deep copy support
 
 from State import State
 
@@ -36,6 +36,13 @@ class Organism:
         self.memorySize = memorySize
         self.numValues = numValues
 
+    def reset(self):
+        """reset the memory, state and location to all 0's"""
+        memorySize = len(self.memory)
+        self.memory = [0 for i in range(0,memorySize)]
+        self.state = 0
+        self.location = 0
+
     def liveALittle(self, numStates = 1):
         """Make the Organism cycle through a state (default), or a few"""
         if numStates < 1:
@@ -53,7 +60,7 @@ class Organism:
         children = []
         for i in range(numChildren):
             #do "DNA crossover"
-            child = self.meiosis(other, percentMutation)
+            child = self.crossOver(other, percentMutation)
             #average values for memory between the two
             for j in range(child.memorySize):
                 child.memory[j] = (self.memory[j] + other.memory[j]) / 2
@@ -66,8 +73,7 @@ class Organism:
             numMutations = (child.numStates*child.numValues +
                             child.memorySize)*pMutation/100
             for j in range(numMutations):
-                mutationLocation = random.randint(0,child.numStates*child.numValues + \
-                               child.memorySize - 1)
+                mutationLocation = random.randint(0,child.numStates*child.numValues + child.memorySize - 1)
                 if mutationLocation < child.numStates*child.numValues:
                     state = mutationLocation / child.numValues
                     value = mutationLocation % child.numValues
@@ -82,12 +88,12 @@ class Organism:
         return children
 
 
-    def meiosis(self, other, percentMutation=5):
+    def crossOver(self, other, percentMutation=5):
         """return an Organism that is a combination of the calling Organism and
         'other'"""
         #deep copy the Organisms 
-        org1 = copy(self);
-        org2 = copy(other);
+        org1 = deepcopy(self);
+        org2 = deepcopy(other);
 
         #get the number of crossover points (and make the actual percentage
         #wobble a little

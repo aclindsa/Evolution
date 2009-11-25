@@ -1,4 +1,4 @@
-from copy import copy #deep copy support
+from copy import deepcopy #deep copy support
 
 from Organism import Organism
 from Map import Map
@@ -7,17 +7,18 @@ from Map import Map
 
 #Constants Section
 #Organism-definition Constants
-MEMORY_SIZE = 8
-NUM_STATES = 8
+MEMORY_SIZE = 20
+NUM_STATES = 20
 NUM_VALUES = 2
 
 #Evolutionary Constants
 ORIGINAL_POOL_SIZE = 10000 #size of the original random generation of organisms
-GENERATION_SIZE = 50 #size of each generation thereafter
-CARRY_OVER = 10  #number of top organisms to 'select' to procreate to make the
+GENERATION_SIZE = 100 #size of each generation thereafter
+CARRY_OVER = 5  #number of top organisms to 'select' to procreate to make the
                  #next generation
-LIFETIME = 100 #number of 'ticks' the organism has to prove itself
-PERCENT_MUTATION = 20 #percent of mutation to apply to each reproduction
+MAX_LIFETIME = 5 #the maximum number of generations an organism can survive for
+TEST_LENGTH = 100 #number of 'ticks' the organism has to prove itself
+PERCENT_MUTATION = 5 #percent of mutation to apply to each reproduction
 NUM_GENERATIONS = 10000 #number of generations
 
 def GOD():
@@ -29,9 +30,12 @@ class Universe:
     def __init__(self):
         #create the map that defines this Universe
         self.map = Map("simple.map")
+        print "Initializing map and first generation...\n"
 
         #generate first set of parents
         self.parents = [Organism(NUM_STATES, MEMORY_SIZE, NUM_VALUES) for i in range(ORIGINAL_POOL_SIZE)]
+        for i in range(ORIGINAL_POOL_SIZE):
+            self.parents[i].birthday = 0
 
         #for each generation,
         for i in range(NUM_GENERATIONS):
@@ -44,8 +48,11 @@ class Universe:
         #test all the parents and see how they perform
         self.scores = {}
         scoresList = []
+        numFinished = 0
         for organism in self.parents:
-            score = self.testOrganism(organism)
+            score,finishedMaze = self.testOrganism(organism)
+            if finishedMaze:
+                numFinished += 1
             scoresList.append(score)
             if score in self.scores.keys():
                 self.scores[score].append(organism)
@@ -53,19 +60,26 @@ class Universe:
                 self.scores[score] = [organism]
         #print out the average score for this generation and overall
         avgscore = reduce(lambda x, y: x+y, scoresList)*1.0 / len(scoresList)
+        maxscore = max(scoresList)
+        minscore = min(scoresList)
         self.totalScores = self.totalScores + avgscore
-        print "generation",self.currentGeneration,":",avgscore," overall:",self.totalScores/self.currentGeneration
+        print "generation",self.currentGeneration,":"
+        print "\t minimum     :",minscore
+        print "\t maximum     :",maxscore
+        print "\t % finished  :",numFinished*1.0/len(scoresList)*100
+        print "\t average     :",avgscore
+        print "\t overall avg :",self.totalScores/self.currentGeneration,"\n"
 
     def selectParents(self):
         #sort them by scores and assign the best to be the new parents
         keys = self.scores.keys()
         keys.sort()
         keys.reverse()
-        parents = []
+        self.parents = []
         currentScoreArray = 0
         scoreInArray = 0
         for i in range(CARRY_OVER):
-            parents.append(self.scores[keys[currentScoreArray]][scoreInArray])
+            self.parents.append(self.scores[keys[currentScoreArray]][scoreInArray])
             scoreInArray = scoreInArray + 1
             if scoreInArray >= len(self.scores[keys[currentScoreArray]]):
                 currentScoreArray = currentScoreArray + 1
@@ -73,8 +87,19 @@ class Universe:
 
     def nextGeneration(self):
         self.reproduce()
+        #now, remove the parents that are too old
+        tooOld = []
+        for i in range(len(self.parents)):
+            if self.parents[i].birthday < self.currentGeneration - MAX_LIFETIME:
+                tooOld.append(i)
+        tooOld.sort()
+        tooOld.reverse()
+        for dying in tooOld:
+            self.parents = self.parents[:dying] + self.parents[dying+1:]
+
         #now, assign these new children to be the parents of the next generation
-        self.parents = self.children
+        #along with preserving the parents
+        self.parents = self.parents + self.children
 
     def reproduce(self):
         self.children = []
@@ -83,7 +108,8 @@ class Universe:
                 for j in range(i+1,len(self.parents)):
                     if len(self.children) < GENERATION_SIZE:
                         #Note: this makes the percent mutation go down as we get up in the generations
-                        c = self.parents[i].reproduce(self.parents[j], 1, PERCENT_MUTATION * (NUM_GENERATIONS-self.generation) / NUM_GENERATIONS)
+                        c = self.parents[i].reproduce(self.parents[j], 1, PERCENT_MUTATION)
+                        c[0].birthday = self.currentGeneration
                         self.children.append(c[0])
                     else:
                         return
@@ -92,10 +118,12 @@ class Universe:
         """Function to test an organism and return a numeric value representing how
         it fared in attempting to solve the supplied maze"""
         #get the starting point for the map
-        coord = copy(self.map.start)
+        coord = deepcopy(self.map.start)
         i = 0
         distanceSum = 0
-        while i < LIFETIME:
+        #reset the organism to its state as if it were being "born"
+        organism.reset()
+        while i < TEST_LENGTH:
             i = i + 1
             #figure out which ways the organism can move
             # and set those in the first four blocks of memory in the organism
@@ -139,9 +167,11 @@ class Universe:
                 break
         #calculate the 'score' of this organism
         #the score is the the number of "tick"s that it didn't have to use
-        #out of the total alloted (LIFETIME) plus the average distance from the end
-        #of the organism
-        return LIFETIME - i + self.map.M * self.map.N - self.map.findShortestPath(coord)/2 - distanceSum / LIFETIME / 2
+        #out of the total alloted (TEST_LENGTH) plus the average of the 
+        #average distance from the end of the map and the final distance 
+        #from the end of the map
+        distanceFromEnd = self.map.findShortestPath(coord)
+        return (TEST_LENGTH - i + self.map.M * self.map.N - distanceFromEnd/2 - distanceSum / TEST_LENGTH / 2, distanceFromEnd == 0)
 
 
 #Function to start the whole process
