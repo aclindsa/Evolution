@@ -1,4 +1,5 @@
 from copy import deepcopy #deep copy support
+from pickle import Pickler
 
 from Organism import Organism
 from Map import Map
@@ -30,8 +31,12 @@ class Universe:
     def __init__(self):
         #create the map that defines this Universe
         self.map = Map("simple.map")
+        #self.map = Map("medium.map")
         print "Initializing map and first generation...\n"
         print str(self.map)
+
+        self.pickleFile = open('pickles.txt', 'w')
+        self.pickler = Pickler(self.pickleFile, 0)
 
         #generate first set of parents
         self.parents = [Organism(NUM_STATES, MEMORY_SIZE, NUM_VALUES) for i in range(ORIGINAL_POOL_SIZE)]
@@ -71,6 +76,7 @@ class Universe:
         print "\t average     :",avgscore
         print "\t overall avg :",self.totalScores/self.currentGeneration,"\n"
 
+
     def selectParents(self):
         #sort them by scores and assign the best to be the new parents
         keys = self.scores.keys()
@@ -85,6 +91,11 @@ class Universe:
             if scoreInArray >= len(self.scores[keys[currentScoreArray]]):
                 currentScoreArray = currentScoreArray + 1
                 scoreInArray = 0
+
+        #if the number of finished organisms is greater than 0, print it out
+        if keys[0] > 100:
+            self.scores[keys[0]][0].displayStatesTable()
+            self.testOrganism(self.scores[keys[0]][0],True)
 
     def nextGeneration(self):
         self.reproduce()
@@ -115,15 +126,25 @@ class Universe:
                     else:
                         return
 
-    def testOrganism(self, organism):
+    def testOrganism(self, organism, debug=False):
         """Function to test an organism and return a numeric value representing how
         it fared in attempting to solve the supplied maze"""
         #get the starting point for the map
         coord = deepcopy(self.map.start)
         i = 0
         distanceSum = 0
+        #reset the organism's state so it has a fresh start for testing
+        organism.reset()
         while i < TEST_LENGTH:
             i = i + 1
+
+            #if we need to, output debugging stuff
+            if debug:
+                print self.map.toString("O",coord)
+                print organism.memory
+                print "state:",organism.state
+                print "memory location:",organism.location
+
             #figure out which ways the organism can move
             # and set those in the first four blocks of memory in the organism
             if self.map.canMoveUp(coord):
@@ -143,13 +164,10 @@ class Universe:
             else:
                 organism.memory[3] = 0
             #make the organism live for one 'tick'
-#            print organism.memory
             organism.liveALittle()
-#            print organism.memory
             #now, check the 'outputs' (the last 4 blocks in the organism's memory)
             upDown = organism.memory[MEMORY_SIZE-4] - organism.memory[MEMORY_SIZE-3]
             leftRight = organism.memory[MEMORY_SIZE-2] - organism.memory[MEMORY_SIZE-1]
-#            print self.map.toString("O",coord)
             if upDown > 0 and self.map.canMoveUp(coord):
                 coord = coord.up()
             elif upDown < 0 and self.map.canMoveDown(coord):
@@ -158,7 +176,6 @@ class Universe:
                 coord = coord.left()
             elif leftRight < 0 and self.map.canMoveRight(coord):
                 coord = coord.right()
-#            print self.map.toString("O",coord)
             #add the current distance from the end point to the current coordinate
             distanceSum = distanceSum + self.map.findShortestPath(coord)
             #if we found the end coordinate, break
